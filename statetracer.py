@@ -70,6 +70,9 @@ class DictStateTracer:
     def _trace(self, member_name, value):
         print('----- trace output ------: %s[%s] = %s' % (self.prefix, member_name, value))
 
+    def _trace_event(self, member_name, event):
+        print('----- trace output ------: %s[%s] %s' % (self.prefix, member_name, event))
+
     def member_changed(self, member_name, old_value, new_value):
         #print('member_changed: %s from %s to %s' % (member_name, old_value, new_value))
         if self.enabled:
@@ -78,9 +81,22 @@ class DictStateTracer:
 
             if hasattr(new_value, '_state_tracer'):
                 #print('calling _start on new_value %s\'s state_tracer %s' % (new_value, new_value._state_tracer))
-                new_value._state_tracer._start('%s.%s' % (self.prefix, member_name))
+                new_value._state_tracer._start('%s[%s]' % (self.prefix, member_name))
             else:
                 self._trace(member_name, new_value)
+
+    def member_added(self, member_name, new_value):
+        if self.enabled:
+            self._trace_event(member_name, 'added')
+            self.member_changed(member_name, None, new_value)
+
+    def member_removed(self, member_name, old_value):
+        #print('member_changed: %s from %s to %s' % (member_name, old_value, new_value))
+        if self.enabled:
+            if hasattr(old_value, '_state_tracer'):
+                old_value._state_tracer._stop()
+
+            self._trace_event(member_name, 'removed')
 
     def _start(self, prefix):
         #print('%s: _start' % self)
@@ -112,9 +128,21 @@ class TracingDict(dict):
         super().__init__(*args, **kwargs)
 
     def __setitem__(self, key, new_value):
-        old_value = self[key] if key in self else None
-        self._state_tracer.member_changed(key, old_value, new_value)
+        if key in self:
+            old_value = self[key]
+            self._state_tracer.member_changed(key, old_value, new_value)
+        else:
+            self._state_tracer.member_added(key, new_value)
         return super().__setitem__(key, new_value)
+
+    def __delitem__(self, key):
+        self._state_tracer.member_removed(key, self[key])
+        return super().__delitem(key)
+
+    def pop(self, key, *args):
+        if key in self:
+            self._state_tracer.member_removed(key, self[key])
+        return super().pop(key, *args)
 
 def setup_properties(cls, members):
 
