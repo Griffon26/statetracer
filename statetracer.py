@@ -137,7 +137,7 @@ class TracingDict(dict):
 
     def __delitem__(self, key):
         self._state_tracer.member_removed(key, self[key])
-        return super().__delitem(key)
+        return super().__delitem__(key)
 
     def pop(self, key, *args):
         if key in self:
