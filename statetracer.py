@@ -18,6 +18,11 @@
 # TODO:
 # Get rid of duplication between normal tracer and dict tracer
 
+from datetime import datetime
+
+def _make_timestamp():
+    return datetime.now().strftime('%Y-%m-%d %H:%M:%S,%f')[:-3]
+
 class StateTracer:
     def __init__(self, obj, members_to_trace):
         #print('Creating %s with obj %s' % (self, obj))
@@ -34,7 +39,7 @@ class StateTracer:
             self.member_changed(member_name, None, getattr(self.obj, member_name))
 
     def _trace(self, member_name, value):
-        print('----- trace output ------: %s.%s = %s' % (self.prefix, member_name, value))
+        print('%s - STATETRACE - %s.%s = %s' % (_make_timestamp(), self.prefix, member_name, value))
 
     def member_changed(self, member_name, old_value, new_value):
         #print('member_changed: %s from %s to %s (trace is %s, members to trace: %s)' % (member_name, old_value, new_value, self.enabled, self.members_to_trace))
@@ -85,10 +90,10 @@ class DictStateTracer:
         self.enabled = False
 
     def _trace(self, member_name, value):
-        print('----- trace output ------: %s[%s] = %s' % (self.prefix, member_name, value))
+        print('%s - STATETRACE - %s[%s] = %s' % (_make_timestamp(), self.prefix, member_name, value))
 
     def _trace_event(self, member_name, event):
-        print('----- trace output ------: %s[%s] %s' % (self.prefix, member_name, event))
+        print('%s - STATETRACE - %s[%s] %s' % (_make_timestamp(), self.prefix, member_name, event))
 
     def member_changed(self, member_name, old_value, new_value):
         #print('member_changed: %s from %s to %s' % (member_name, old_value, new_value))
@@ -234,5 +239,3 @@ if __name__ == '__main__':
 
     print('Adding key 3 with value 4 to member2 of second instance...')
     obj.member1.member2[3] = 4
-
-
